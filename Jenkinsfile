@@ -2,14 +2,14 @@ pipeline {
     agent { label 'linux' }
 
     tools {
-        jdk 'jdk17'
-        maven 'maven3'
+        jdk 'jdk'
+        maven 'mvn'
     }
 
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/ashisentry/devsecops-enterprise-pipeline.git'
+              checkout scm 
             }
         }
 
