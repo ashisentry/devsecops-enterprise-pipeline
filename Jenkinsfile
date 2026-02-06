@@ -7,35 +7,58 @@ pipeline {
     }
 
     stages {
+
         stage('Checkout') {
             steps {
-              checkout scm 
+                checkout scm
             }
         }
 
         stage('Build') {
             steps {
-		dir('devsecops-demo'){
-			sh 'mvn clean install'
-		}
+                dir('devsecops-demo') {
+                    sh 'mvn clean install -DskipTests'
+                }
             }
         }
 
         stage('Test') {
             steps {
-		dir('devsecops-demo'){
-                sh 'mvn test'
-        	    }
-		}
+                dir('devsecops-demo') {
+                    sh 'mvn test'
+                }
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('sonarqube') {
+                    dir('devsecops-demo') {
+                        sh '''
+                        mvn sonar:sonar \
+                          -Dsonar.projectKey=devsecops-demo \
+                          -Dsonar.projectName="DevSecOps Demo"
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Quality Gate') {
+            steps {
+                timeout(time: 1, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
+            }
         }
     }
 
     post {
         success {
-            echo "Build Successful"
+            echo "Pipeline completed successfully. Quality gate passed."
         }
         failure {
-            echo "Build Failed"
+            echo "Pipeline failed. Check build logs or SonarQube quality gate."
         }
     }
 }
